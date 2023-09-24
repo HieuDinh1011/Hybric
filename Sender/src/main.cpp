@@ -13,7 +13,50 @@
 #include "main.h"
 #include "RevAndSend.h"
 #include "input_reading.h"
+//----------------------------------------Variables to accommodate the data to be sent.
+#define CONNECT_SUSCESS 1
+#define CONNECT_FAIL 2
+#define LED_Pin   0
+#define BTN_Pin1   2
+#define BTN_Pin2  3
+#define BTN_Pin3   4
 
+// //----------------------------------------Wifi Setting
+#define WIFI_SSID "Vinh"
+#define WIFI_PASSWORD "88888888"
+// Variables for test data
+
+extern int LED_State_Send; //--> Variable to hold the data to be transmitted to control the LEDs on the paired ESP32.
+
+extern int LED_State_Receive; //--> Variable to receive data to control the LEDs on the ESP32 running this code.
+// MAC Address of responder - edit as required
+
+
+// Define a data structure
+ struct struct_message {
+  // char a[32];
+  // int b;
+  // float c;
+  // bool d;
+  int BUTTON_STATUS;
+} ;
+
+// Create a structured object
+extern struct_message myData;
+
+// Peer info
+extern esp_now_peer_info_t peerInfo;
+struct_message myData;
+uint8_t broadcastAddress[] = {0xC4, 0xDE, 0xE2, 0x1F, 0x3D, 0x0C};
+esp_now_peer_info_t peerInfo;
+int int_value;
+float float_value;
+bool bool_value = true;
+// Callback function called when data is sent
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  Serial.print("\r\nLast Packet Send Status:\t");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+}
 
 void setup() {
   
@@ -49,22 +92,6 @@ bool isLightOn = false;  // Trạng thái đèn
 
 void loop() {
 
-  // Create test data
-
-  // // Generate a random integer
-  // int_value = random(1,20);
-
-  // // Use integer to make a new float
-  // float_value = 1.3 * int_value;
-
-  // // Invert the boolean value
-  // bool_value = !bool_value;
-  
-  // Format structured data
-  //strcpy(myData.a, "Welcome to the Workshop!");
-  // myData.b = int_value;
-  // myData.c = float_value;
-  // myData.d = bool_value;
   myData.BUTTON_STATUS = digitalRead(BTN_Pin1);
   bool buttonState = digitalRead(BTN_Pin1);
 

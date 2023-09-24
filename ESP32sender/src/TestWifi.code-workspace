@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../../TestWifi"
+		},
+		{
+			"name": "ESP32sender",
+			"path": ".."
+		}
+	],
+	"settings": {}
+}

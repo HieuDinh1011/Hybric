@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #include <WiFi.h>
 
-#define WIFI_SSID "Vinh"
-#define WIFI_PASSWORD "88888888"
+#define WIFI_SSID "Amercland"
+#define WIFI_PASSWORD "yenlam1507"
 const int RED_LED = 0;
 const int BUTTON = 2;
 void setup() {
