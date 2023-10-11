@@ -1,26 +1,34 @@
 #include <bleServer.h>
 
-BLEServer* pServer = NULL;
-BLECharacteristic* pCharacteristic = NULL;
-BLEDescriptor *pDescr;
-BLE2902 *pBLE2902;
+BLEServer *pServer = NULL;
+BLECharacteristic *pCharacteristic_1 = NULL;
+BLECharacteristic *pCharacteristic_2 = NULL;
+BLEDescriptor *pDescr_1;
+BLE2902 *pBLE2902_1;
+BLE2902 *pBLE2902_2;
 
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 uint32_t value = 0;
 
-class MyServerCallbacks: public BLEServerCallbacks {
-    void onConnect(BLEServer* pServer) {
-      deviceConnected = true;
-    };
+class MyServerCallbacks : public BLEServerCallbacks
+{
+  void onConnect(BLEServer *pServer)
+  {
+    deviceConnected = true;
+  };
 
-    void onDisconnect(BLEServer* pServer) {
-      deviceConnected = false;
-    }
+  void onDisconnect(BLEServer *pServer)
+  {
+    deviceConnected = false;
+  }
 };
 
-void CreateSetUpBLE(){
-     // Create the BLE Device
+void CreateSetUpBLE()
+{
+  Serial.begin(115200);
+
+  // Create the BLE Device
   BLEDevice::init("ESP32");
 
   // Create the BLE Server
@@ -31,22 +39,29 @@ void CreateSetUpBLE(){
   BLEService *pService = pServer->createService(SERVICE_UUID);
 
   // Create a BLE Characteristic
-  pCharacteristic = pService->createCharacteristic(
-                      CHARACTERISTIC_UUID,
-                      BLECharacteristic::PROPERTY_READ |
-                      BLECharacteristic::PROPERTY_WRITE |
-                      BLECharacteristic::PROPERTY_NOTIFY
-                    );               
+  pCharacteristic_1 = pService->createCharacteristic(
+      CHARACTERISTIC_UUID_1,
+      BLECharacteristic::PROPERTY_NOTIFY);
+
+  pCharacteristic_2 = pService->createCharacteristic(
+      CHARACTERISTIC_UUID_2,
+      BLECharacteristic::PROPERTY_READ |
+          BLECharacteristic::PROPERTY_WRITE |
+          BLECharacteristic::PROPERTY_NOTIFY);
 
   // Create a BLE Descriptor
-  
-  pDescr = new BLEDescriptor((uint16_t)0x2901);
-  pDescr->setValue("A very interesting variable");
-  pCharacteristic->addDescriptor(pDescr);
-  
-  pBLE2902 = new BLE2902();
-  pBLE2902->setNotifications(true);
-  pCharacteristic->addDescriptor(pBLE2902);
+  pDescr_1 = new BLEDescriptor((uint16_t)0x2901);
+  pDescr_1->setValue("A very interesting variable");
+  pCharacteristic_1->addDescriptor(pDescr_1);
+
+  // Add the BLE2902 Descriptor because we are using "PROPERTY_NOTIFY"
+  pBLE2902_1 = new BLE2902();
+  pBLE2902_1->setNotifications(true);
+  pCharacteristic_1->addDescriptor(pBLE2902_1);
+
+  pBLE2902_2 = new BLE2902();
+  pBLE2902_2->setNotifications(true);
+  pCharacteristic_2->addDescriptor(pBLE2902_2);
 
   // Start the service
   pService->start();
@@ -55,32 +70,39 @@ void CreateSetUpBLE(){
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(SERVICE_UUID);
   pAdvertising->setScanResponse(false);
-  pAdvertising->setMinPreferred(0x0);  // set value to 0x00 to not advertise this parameter
+  pAdvertising->setMinPreferred(0x0); // set value to 0x00 to not advertise this parameter
   BLEDevice::startAdvertising();
   Serial.println("Waiting a client connection to notify...");
-
 }
 
-void loopBLE(){
-     // notify changed value
-    if (deviceConnected) {
-        pCharacteristic->setValue(value);
-        pCharacteristic->notify();
-        value++;   
-        
-        Serial.println(value);     
-        delay(1000);
-    }
-    // disconnecting
-    if (!deviceConnected && oldDeviceConnected) {
-        delay(500); // give the bluetooth stack the chance to get things ready
-        pServer->startAdvertising(); // restart advertising
-        Serial.println("start advertising");
-        oldDeviceConnected = deviceConnected;
-    }
-    // connecting
-    if (deviceConnected && !oldDeviceConnected) {
-        // do stuff here on connecting
-        oldDeviceConnected = deviceConnected;
-    }
+void loopBLE()
+{
+  if (deviceConnected)
+  {
+    pCharacteristic_1->setValue(value);
+    pCharacteristic_1->notify();
+    value++;
+
+    std::string rxValue = pCharacteristic_2->getValue();
+    Serial.print("Characteristic 2 (getValue): ");
+    Serial.println(rxValue.c_str());
+
+    String txValue = "String with random value from Server: " + String(random(1000));
+    pCharacteristic_2->setValue(txValue.c_str());
+    Serial.println("Characteristic 2 (setValue): " + txValue);
+
+    delay(1000);
+  }
+  if (!deviceConnected && oldDeviceConnected)
+  {
+    delay(500);
+    pServer->startAdvertising();
+    Serial.println("start advertising");
+    oldDeviceConnected = deviceConnected;
+  }
+  if (deviceConnected && !oldDeviceConnected)
+  {
+    // do stuff here on connecting
+    oldDeviceConnected = deviceConnected;
+  }
 }
